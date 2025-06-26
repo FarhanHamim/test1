@@ -13,7 +13,7 @@ const app = express();
 // Allow CORS for both local frontend and production Netlify domain
 const allowedOrigins = [
   // Always allow the production frontend
-  'https://moonlit-dragon-61125c.netlify.app/',  // Netlify frontend domain
+  'https://moonlit-dragon-61125c.netlify.app',  // Netlify frontend domain
 ];
 
 // Add development origins if not in production
