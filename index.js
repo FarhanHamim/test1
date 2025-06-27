@@ -9,51 +9,28 @@ const groupRoutes = require('./routes/groupRoutes');
 
 const app = express();
 
-// Allow CORS for both local frontend and production Netlify domain
-const allowedOrigins = [
-  'https://moonlit-dragon-61125c.netlify.app',  // Netlify frontend domain
-];
-
-// Add development origins if not in production
-if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.push('http://localhost:5173');  // Local development
-  allowedOrigins.push('http://localhost:5174');  // Local development alternative port
-}
-
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+const corsOptions = {
+  origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(null, true);
   },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
 
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '25mb' })); 
 app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
-// MongoDB connection with better error handling
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error('MongoDB connection error:', error.message);
-    process.exit(1);
-  }
-};
-
-connectDB();
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 app.get('/', (req, res) => {
   res.send('HobbyHub API is running');
